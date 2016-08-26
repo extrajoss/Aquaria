@@ -4,6 +4,9 @@ var menuBar = require('./pv/menuBar');
 var numeric = require('numeric');
 var rng = seedrandom('aquaria', {global: true});
 var sequenceUtils = require('./sequence/sequenceUtils');
+var pcaUtils = require('./sequence/pcaUtils');
+var rotations = require('./rotations');
+var colourUtils = require('./sequence/colourUtils');
 var pViewer;
 var structure;
 var PV3DPanel = function (attachToDiv) {
@@ -187,7 +190,12 @@ PV3DPanel.prototype.initFeatureView = function(structure) {
 //	this.rotationSamples = createRandomRotations(128);
 	this.preferredRotations = [];
 	
-	var pca = this.computePCA();
+	var atomList = [];
+  //var feature = pViewer.renderAs('feature', view, this.type);
+  this.geom.eachCentralAtom(function(atom, pos) {
+    atomList.push([pos[0], pos[1], pos[2]]);
+  });
+	var pca = pcaUtils.computePCA(atomList);
 	var pc1 = [pca[0], pca[4], pca[8]];
 	var rot = mat4.create();
 	mat4.rotate(rot, pca, Math.PI, pc1);
@@ -202,7 +210,7 @@ PV3DPanel.prototype.initFeatureView = function(structure) {
 	
 	this.rotationSamples = [preferred1, preferred2];
 	
-	this.sampleRotations(this.rotationSamples, this.preferredRotations[0], 
+	rotations.sampleRotations(this.rotationSamples, this.preferredRotations[0], 
 			pc1, 128);
 	
 //	this.featureMap = this.computeFeatureMap(this.rotationSamples);
@@ -346,7 +354,7 @@ PV3DPanel.prototype.setColourScheme =  function(colourScheme) {
 		that.colourScheme = color.byChain();
 		break;
 	case 'element' :
-		that.colourScheme = byElementWithBlack();
+		that.colourScheme = colourUtils.byElementWithBlack();
 		break;
 	}
 };
@@ -620,51 +628,7 @@ PV3DPanel.prototype.gestures = function () {
 	return ret;
 }
 
-var  byElementWithBlack = function() {
-	return new ColorOp(function(atom, out, index) {
-		var ele = atom.element();
-		if (ele === 'C') {
-			out[index] = 0.0; 
-			out[index+1] = 0.0; 
-			out[index+2] = 0.0; 
-			out[index+3] = 1.0;
-			return out;
-		}
-		if (ele === 'N') {
-			out[index] = 0; 
-			out[index+1] = 0; 
-			out[index+2] = 1;
-			out[index+3] = 1.0;
-			return out;
-		}
-		if (ele === 'O') {
-			out[index] = 1; 
-			out[index+1] = 0; 
-			out[index+2] = 0;
-			out[index+3] = 1.0;
-			return out;
-		}
-		if (ele === 'S') {
-			out[index] = 0.8; 
-			out[index+1] = 0.8; 
-			out[index+2] = 0;
-			out[index+3] = 1.0;
-			return out;
-		}
-		if (ele === 'CA') {
-			out[index] = 0.533; 
-			out[index+1] = 0.533; 
-			out[index+2] = 0.666;
-			out[index+3] = 1.0;
-			return out;
-		}
-		out[index] = 1; 
-		out[index+1] = 0; 
-		out[index+2] = 1;
-		out[index+3] = 1.0;
-		return out;
-	}, null, null);
-};
+
 
 PV3DPanel.prototype.setViewMode = function(mode, options) {
 	options = options || {entropyWeight:1,preferredWeight:1,distanceWeight:1}
@@ -740,7 +704,7 @@ PV3DPanel.prototype.setViewMode = function(mode, options) {
 //			var s = that.getViewStability(r);
 			var p = feature.point;
 			vec3.normalize(p, p);
-			var d = dist(sphericalDistance(p, ccp));
+			var d = dist(rotations.sphericalDistance(p, ccp));
 //			that.labelPoints([p]);
 			var score = options.distanceWeight * d + 
 						options.entropyWeight * e + 
@@ -827,26 +791,6 @@ PV3DPanel.prototype.labelPoints = function(points, label) {
 
 }
 
-//returns the normalized spherical distance of two cartesian vectors
-sphericalDistance = function(a, b) {
-	var an = vec3.create();
-	var bn = vec3.create();
-	vec3.normalize(an, a);
-	vec3.normalize(bn, b);
-	return Math.acos(vec3.dot(an, bn)) / Math.PI;
-};
-
-
-PV3DPanel.prototype.createRotation = function(view) {
-	var start = vec3.fromValues(0, 0, 1);
-	var q = quat.create();
-	var m = mat4.create();
-	var tmpVec = vec3.create();
-	vec3.normalize(tmpVec, view);
-	var rotation = mat4.fromQuat(m, quat.rotationTo(q, tmpVec, start));
-
-	return(rotation);
-}
 
 PV3DPanel.prototype.computeTMRotation = function(features) {
 	var rotation = mat4.create();
@@ -872,8 +816,8 @@ PV3DPanel.prototype.computeTMRotation = function(features) {
 		});
 	});
 
-	var comExtra = getCenterOfMass(extraCellularAtoms);
-	var comIntra = getCenterOfMass(intraCellularAtoms);
+	var comExtra = rotations.getCenterOfMass(extraCellularAtoms);
+	var comIntra = rotations.getCenterOfMass(intraCellularAtoms);
 
 	var up = vec3.create();
 	vec3.subtract(up, comExtra, comIntra);
@@ -919,28 +863,7 @@ PV3DPanel.prototype.computeTMRotation = function(features) {
 	return(rotation);
 }
 
-getCenterOfMass = function(points) {
-	var c = [0, 0, 0];
-	var l = points.length;
-	points.forEach(function(point) {
-		c[0] += point[0] / l;
-		c[1] += point[1] / l;
-		c[2] += point[2] / l;
-	});
-	return c;
-}
 
-PV3DPanel.prototype.sampleRotations = function(ret, rotation, axis, samples) {
-	for (var i = 0; i < samples; ++i) {
-		var rad = 2*Math.PI*(i+1)/(samples + 1);
-		var auxRotation = mat4.create();
-		mat4.rotate(auxRotation, rotation, rad, axis);
-		var p = vec3.fromValues(auxRotation[2], auxRotation[6], auxRotation[10]);
-		vec3.normalize(p,p);
-		ret.push(p);
-	}
-	return(ret);
-}
 
 //PV3DPanel.prototype.getMaximumEntropyView = function() {
 //	var that = this;
@@ -997,137 +920,32 @@ PV3DPanel.prototype.computePreferredRegion = function(point) {
 	vec3.normalize(preferred2, preferred2);
 //	vec3.scale(preferred2, preferred1, -1);
 
-	var sp1 = spherical(preferred1);
-	var sp2 = spherical(preferred2);
+	var sp1 = rotations.spherical(preferred1);
+	var sp2 = rotations.spherical(preferred2);
 	var mu1 = sp1[1];
 	var mu2 = sp2[1];
 
 //	var phi = sp1[2];
 
-	var sp = spherical(p);
+	var sp = rotations.spherical(p);
 
 //	var d = gaussian([mu1, phi], [1, 1]);
 	
-	var p1 = mvNormal([0], [[1]]);
-	var p2 = mvNormal([0], [[1]]);
-	var dp1 = sphericalDistance(p, preferred1);
-	var dp2 = sphericalDistance(p, preferred2);
+	var p1 = rotations.mvNormal([0], [[1]]);
+	var p2 = rotations.mvNormal([0], [[1]]);
+	var dp1 = rotations.sphericalDistance(p, preferred1);
+	var dp2 = rotations.sphericalDistance(p, preferred2);
 	
 	return 0.5 * p1([dp1]) + 0.5 * p2([dp2]); //Math.min(sphericalDistance(p, preferred1), sphericalDistance(p, preferred2));
 
 }
 
-gaussian = function(mu, sigma) {
-	return function(x) {
-		var dx = x[0] - mu[0];
-		var dy = x[1] - mu[1];
-		return Math.exp(-(dx*dx/(2*sigma[0]) + dy*dy/2*sigma[1]));
-	}
-}
 
-normal = function(mu, sd) {
-	return mvNormal([mu], [[sd]]);
-}
-
-mvNormal = function(mu, S) {
-	var Sinv = numeric.inv(S);
-	var Sdet = numeric.det(S);
-	var k = mu.length;
-	var A = Math.sqrt(Math.pow(2*Math.PI, k) * Sdet);
-	A = 1/A;
-	return function(x) {
-		var xx = x;
-		if (!(x instanceof Array)) {
-			xx = [x];
-		}
-		var dx = numeric.sub(xx, mu);
-		var v = numeric.dot(numeric.dot(numeric.transpose([dx]), Sinv), [dx]);
-		return A * Math.exp(-0.5 * v[0][0]);
-	}
-}
-
-spherical = function(cartesian) {
-	var r = vec3.length(cartesian);
-	var theta = Math.atan2(cartesian[1], cartesian[0]);
-	var phi = Math.acos(cartesian[2]/r);
-	return vec3.fromValues(r, theta, phi);
-}
 
 getIndexFromResidue = function(residue) {
 	return residue.chain().name() + residue.num();
 }
 
-PV3DPanel.prototype.computePCA = function() {
-	var X = [];
-
-	//var feature = pViewer.renderAs('feature', view, this.type);
-	this.geom.eachCentralAtom(function(atom, pos) {
-		X.push([pos[0], pos[1], pos[2]]);
-	});
-//	pViewer.rm('feature');
-
-	console.log("computing PCA for: " + X.length + "residues");
-
-	if (!X.length) {
-		return(mat4.create());
-	}
-
-	// compute and subtract column means
-	var svd = pca(X);
-	var V = svd.V;
-	var right = V[0];
-	var up = V[1];
-	var view = V[2];
-	var m = mat4.fromValues(
-			right[0], right[1], right[2], 0,
-			up[0], up[1], up[2], 0,
-			view[0], view[1], view[2], 0,
-			0, 0, 0, 1);
-
-	var r = mat3.create();
-	mat3.fromMat4(r, m);
-	if (mat3.determinant(r) < 0) {
-		m = mat4.fromValues(-right[0], -right[1], -right[2], 0,
-				-up[0], -up[1], -up[2], 0,
-				-view[0], -view[1], -view[2], 0,
-				0, 0, 0, 1);
-	}
-	return(m);
-}
-
-function pca(X) {
-	var XT = numeric.transpose(X);
-	var mean = XT.map(function(row) {return numeric.sum(row) / row.length;});
-	X = numeric.transpose(XT.map(function(row, i) {return numeric.sub(row, mean[i]);}));
-
-	var sigma = numeric.dot(numeric.transpose(X), X);
-	var svd = numeric.svd(sigma);
-	return svd;
-}
-
-function hammersleySampler(n) {
-	var points = [];
-	var t;
-	for (var k = 0; k < n; ++k) {
-		t = 0;
-		var kk;
-		for (var p = 0.5, kk=k; kk; p*=0.5, kk>>=1) {
-			if (kk & 1) {
-				t += p;
-			}
-		}
-		t = 2 * t - 1;
-		var st = Math.sqrt(1 - t*t);
-		var phi = (k + 0.5) / n;  // theta in [0,1]
-		var phirad = phi * 2 * Math.PI;
-//		var phi = Math.acos(t);
-		var p = vec3.fromValues(st * Math.cos(phirad), st*Math.sin(phirad), t);
-//		points.push(vec3.fromValues(1, phirad, Math.acos(t)));
-		points.push(p);
-
-	}
-	return points;
-}
 
 
 
