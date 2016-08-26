@@ -8,6 +8,7 @@ var dnode = require('dnode');
 var shoe = require('shoe');
 var Applet3DPanel = require('./applet3DPanel');
 var PV3DPanel = require('./pv3DPanel');
+var Jolecule3DPanel = require('./jolecule3DPanel');
 var IDRPanel = require('./IDRPanel');
 var featurelist = require('./featurelist');
 //var leapConnector = require('./leapConnector');
@@ -1330,6 +1331,8 @@ var MAX_PROTEIN_HISTORY = 5;
 		  AQUARIA.panel3d = new PV3DPanel('#threeDSpan');
 	  } else if(window.threedViewer === 'idr') {
 		  AQUARIA.panel3d = new IDRPanel('#threeDSpan');
+    } else if(window.threedViewer === 'jolecule') {
+      AQUARIA.panel3d = new Jolecule3DPanel('#threeDSpan');
 	  }
 	  else {
 	    console.log('cannot find viewer: ' + window.threedViewer);

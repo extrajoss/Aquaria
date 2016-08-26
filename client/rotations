@@ -1,0 +1,72 @@
+//returns spherical coordinates
+function haltonSampler(n, p2) {
+  var points = [];
+  for (var k = 0, pos = 0; k < n; ++k) {
+    var t = 0;
+    for (var p = 0.5, kk=k; kk; p*=0.5, kk>>=1) {
+      if (kk & 1) { // kk % 2 == 1
+        t += p;
+      }
+    }
+    t = 2 * t - 1;        // map from [0,1] to [-1,1]
+    var st = Math.sqrt(1 - t*t);
+    var phi = 0;
+    var ip = 1/p2;
+    for (var p = ip, kk=k; kk; p *= ip, kk/=p2) {
+      var a = kk % p2;
+      if (a) {
+        phi += a * p;
+      }
+    }
+    var phirad = phi * 4 * Math.PI;
+    var p = vec3.fromValues(st * Math.cos(phirad), st*Math.sin(phirad), t);
+    var r = vec3.length(p);
+    points.push(vec3.fromValues(r, phirad, Math.acos(t)));
+//    points.push(p);
+  }
+
+  return points;
+}
+
+sphericalToRotation = function(point) {
+  var t = Math.cos(point[2]);
+  var st = Math.sqrt(1 - t*t);
+  var phirad = point[1];
+  var p = vec3.fromValues(st * Math.cos(phirad), st*Math.sin(phirad), t);
+  var start = vec3.fromValues(0, 0, 1);
+  var q = quat.create();
+  var m = mat4.create();
+  var tmpVec = vec3.create();
+  vec3.normalize(tmpVec, p);
+  return mat4.fromQuat(m, quat.rotationTo(q, tmpVec, start));
+}
+
+function createRandomRotations(n) {
+
+  return hammersleySampler(n);
+
+  var start = vec3.fromValues(0, 0, 1);
+  var points = hammersleySampler(n);
+  var ret = points.map(function(p) {
+    var q = quat.create();
+    var m = mat4.create();
+    var tmpVec = vec3.create();
+    vec3.normalize(tmpVec, p);
+    return mat4.fromQuat(m, quat.rotationTo(q, tmpVec, start));
+  });
+
+//  var twoPI = 2 * Math.PI;
+//  var ret = [];
+//  for (var i = 0; i < n; ++i) {
+//  var u1 = Math.random();
+//  var u2 = Math.random();
+//  var u3 = Math.random();
+//  var st = Math.sqrt(1-u1);
+
+//  var q = quat.fromValues(st*Math.sin(twoPI*u2),st*Math.cos(twoPI*u2), Math.sqrt(u1)*Math.sin(twoPI*u3), Math.sqrt(u1)*Math.cos(twoPI*u3));
+//  var auxRotation = mat4.create();
+//  mat4.fromQuat(auxRotation,q);
+//  ret.push(auxRotation);
+//  }
+  return(ret);
+}

@@ -3,35 +3,7 @@ var seedrandom = require('seedrandom');
 var menuBar = require('./pv/menuBar');
 var numeric = require('numeric');
 var rng = seedrandom('aquaria', {global: true});
-
-var singleResidue = {};
-singleResidue["ALA"] =  "A";
-singleResidue["CYS"] =  "C";
-singleResidue["ASP"] =  "D";
-singleResidue["GLU"] =  "E";
-singleResidue["PHE"] =  "F";
-singleResidue["GLY"] =  "G";
-singleResidue["HIS"] =  "H";
-singleResidue["ILE"] =  "I";
-singleResidue["LYS"] =  "K";
-singleResidue["LEU"] =  "L";
-singleResidue["MET"] =  "M";
-singleResidue["ASN"] =  "N";
-singleResidue["PRO"] =  "P";
-singleResidue["GLN"] =  "Q";
-singleResidue["ARG"] =  "R";
-singleResidue["SER"] =  "S";
-singleResidue["THR"] =  "T";
-singleResidue["VAL"] =  "V";
-singleResidue["TRP"] =  "W";
-singleResidue["TYR"] =  "Y";
-singleResidue[" DA"] =  "a";
-singleResidue[" DT"] =  "t";
-singleResidue[" DG"] =  "g";
-singleResidue[" DC"] =  "c";
-singleResidue[" DI"] =  "i";
-singleResidue[" DU"] =  "u";
-
+var sequenceUtils = require('./sequence/sequenceUtils');
 var pViewer;
 var structure;
 var PV3DPanel = function (attachToDiv) {
@@ -592,34 +564,7 @@ PV3DPanel.prototype.getExistingColour = function() {
 //	colorOp.colorFor(trace.centralAtomAt(j), data, index);
 
 }
-PV3DPanel.prototype.getResidueTextForSingleChain = function (chain, residues) {
-	var i;
-	var lastResidue = residues[0];
-	var ranges = [];
-	var range = null;
-	residues.forEach(function (residue) {
-		if (residue && (residue.num() === (lastResidue.num() + 1))) {
-			lastResidue = residue; 
-			range.end = lastResidue;
-		}else {
-			if (range) {
-				ranges.push(range);
-			}
-			lastResidue = residue; 
-			range = {
-					start: lastResidue,
-					end: lastResidue
-			};
-		}
-	});
-	ranges.push(range);
 
-	var rangeTexts = ranges.map(function (r) {
-		var ret = singleResidue[r.start.name()] + "(" + r.start.num() + ")" ;
-		return r.start === r.end ? ret : ret + '-' + singleResidue[r.end.name()] + "(" + r.end.num() + ")";  
-	})
-	return chain.name() + ": " + rangeTexts.join(",") + "<br>"; 
-};
 
 PV3DPanel.prototype.getResidueText = function (residues) {
 	var that = this;
@@ -635,13 +580,13 @@ PV3DPanel.prototype.getResidueText = function (residues) {
 	residues.forEach(function (residue) {
 		var currentChain = residue.chain();
 		if (lastChain.name() !== currentChain.name()) {
-			ret += that.getResidueTextForSingleChain(lastChain, chainResidues);
+			ret += sequenceUtils.getResidueTextForSingleChain(lastChain, chainResidues);
 			lastChain = currentChain;
 			chainResidues = [];
 		}
 		chainResidues.push(residue);
 	});
-	ret += that.getResidueTextForSingleChain(lastChain, chainResidues);
+	ret += sequenceUtils.getResidueTextForSingleChain(lastChain, chainResidues);
 
 	return ret;
 }
@@ -1184,77 +1129,6 @@ function hammersleySampler(n) {
 	return points;
 }
 
-//returns spherical coordinates
-function haltonSampler(n, p2) {
-	var points = [];
-	for (var k = 0, pos = 0; k < n; ++k) {
-		var t = 0;
-		for (var p = 0.5, kk=k; kk; p*=0.5, kk>>=1) {
-			if (kk & 1) {	// kk % 2 == 1
-				t += p;
-			}
-		}
-		t = 2 * t - 1;				// map from [0,1] to [-1,1]
-		var st = Math.sqrt(1 - t*t);
-		var phi = 0;
-		var ip = 1/p2;
-		for (var p = ip, kk=k; kk; p *= ip, kk/=p2) {
-			var a = kk % p2;
-			if (a) {
-				phi += a * p;
-			}
-		}
-		var phirad = phi * 4 * Math.PI;
-		var p = vec3.fromValues(st * Math.cos(phirad), st*Math.sin(phirad), t);
-		var r = vec3.length(p);
-		points.push(vec3.fromValues(r, phirad, Math.acos(t)));
-//		points.push(p);
-	}
 
-	return points;
-}
-
-sphericalToRotation = function(point) {
-	var t = Math.cos(point[2]);
-	var st = Math.sqrt(1 - t*t);
-	var phirad = point[1];
-	var p = vec3.fromValues(st * Math.cos(phirad), st*Math.sin(phirad), t);
-	var start = vec3.fromValues(0, 0, 1);
-	var q = quat.create();
-	var m = mat4.create();
-	var tmpVec = vec3.create();
-	vec3.normalize(tmpVec, p);
-	return mat4.fromQuat(m, quat.rotationTo(q, tmpVec, start));
-}
-
-function createRandomRotations(n) {
-
-	return hammersleySampler(n);
-
-	var start = vec3.fromValues(0, 0, 1);
-	var points = hammersleySampler(n);
-	var ret = points.map(function(p) {
-		var q = quat.create();
-		var m = mat4.create();
-		var tmpVec = vec3.create();
-		vec3.normalize(tmpVec, p);
-		return mat4.fromQuat(m, quat.rotationTo(q, tmpVec, start));
-	});
-
-//	var twoPI = 2 * Math.PI;
-//	var ret = [];
-//	for (var i = 0; i < n; ++i) {
-//	var u1 = Math.random();
-//	var u2 = Math.random();
-//	var u3 = Math.random();
-//	var st = Math.sqrt(1-u1);
-
-//	var q = quat.fromValues(st*Math.sin(twoPI*u2),st*Math.cos(twoPI*u2), Math.sqrt(u1)*Math.sin(twoPI*u3), Math.sqrt(u1)*Math.cos(twoPI*u3));
-//	var auxRotation = mat4.create();
-//	mat4.fromQuat(auxRotation,q);
-//	ret.push(auxRotation);
-//	}
-	return(ret);
-}
 
 module.exports = PV3DPanel;
