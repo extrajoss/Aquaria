@@ -10,5 +10,6 @@
 	"minor_version"	: "0",
   "googleHostedService" : "",
   "googleAnalyticsID" : "[your analytics ID]",
-  "googleAnalyticsHostname" : "[your analytics hostname]"
+  "googleAnalyticsHostname" : "[your analytics hostname]",
+	"lastDatabaseUpdate": "[Last Update Date]"
 }

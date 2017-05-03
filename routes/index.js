@@ -45,7 +45,8 @@ exports.home_page = function(request, response, next){
     	console.log('INSIDE : reqID:' + request.params.id);
     	var args = { title: 'Success',
     	    googleAnalyticsID: config.get('googleAnalyticsID'),    
-          googleAnalyticsHostname: config.get('googleAnalyticsHostname')    
+          googleAnalyticsHostname: config.get('googleAnalyticsHostname')   ,
+          lastDatabaseUpdate: config.get('lastDatabaseUpdate') 
     	};
     	if (request.params.id && request.params.id.indexOf('/leap') == 0) {
     		args['interactive'] = 'leap';
@@ -60,7 +61,8 @@ exports.home_page = function(request, response, next){
         var initialParams = {primary_accession: pdbRow.Accession, pdb_id: request.params.id, pdb_chain: pdbChain};
         var args = { title: 'Success', initialParams: JSON.stringify(initialParams),
             googleAnalyticsID: config.get('googleAnalyticsID'),    
-            googleAnalyticsHostname: config.get('googleAnalyticsHostname')    
+            googleAnalyticsHostname: config.get('googleAnalyticsHostname')     ,
+            lastDatabaseUpdate: config.get('lastDatabaseUpdate')   
         }
         response.render('home_page', args);
         

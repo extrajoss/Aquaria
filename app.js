@@ -74,7 +74,7 @@ var sock = shoe(function (stream) {
 		    get_matching_structures : matching_structures.get_matching_structures,
 		    getAccessionForPDB: matching_structures.getAccessionForPDBCallback,
 		    get_secondary_clusters : secondary_clustering.get_secondary_clusters,
-        queryPDBTitle : secondary_clustering.queryPDBTitle,
+        	queryPDBTitle : secondary_clustering.queryPDBTitle,
 		    get_3D_alignment : viewer_format.get_3D_alignment,
 		    getPubMedForPDB : metainfo.getPubMedForPDB,
 		    getOrganismInfo : metainfo.getOrganismInfo,
