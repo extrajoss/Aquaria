@@ -6,7 +6,7 @@
     "start": "node app",
     "test": "make test",
     "setupTemplates" : "mkdir jar;mkdir public/cache;cp site.json.template site.json",
-    "updateJars": "curl -o jar/aquariaJars.tar.gz http://odonoghuelab.org/Downloads/Aquaria/aquariaJars.tar.gz;tar -zxvf jar/aquariaJars.tar.gz;rm jar/aquariaJars.tar.gz"
+    "updateJars": "curl -o jar/aquariaJars.tar.gz https://odonoghuelab.org/Downloads/Aquaria/aquariaJars.tar.gz;tar -zxvf jar/aquariaJars.tar.gz;rm jar/aquariaJars.tar.gz"
   },
   "dependencies": {
     "express": "~3.10.0",
