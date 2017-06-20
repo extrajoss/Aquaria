@@ -320,9 +320,9 @@ PV3DPanel.prototype.reload =  function(attributes) {
 	pViewer.fitParent();
 //	pViewer.resize(attributes.width, attributes.height);
 
-//	var url = "http://rcsb.org:80/pdb/files/" + attributes.pdb_id + ".pdb.gz";
+//	var url = "https://files.rcsb.org/download/" + attributes.pdb_id + ".pdb.gz";
 //	if (biounit > 0) {
-//	url = "http://rcsb.org:80/pdb/files/" + attributes.pdb_id + ".pdb" + attributes.biounit + ".gz";
+//	url = "https://files.rcsb.org/download/" + attributes.pdb_id + ".pdb" + attributes.biounit + ".gz";
 //	}
 	var beforeSend = function(xhr) {xhr.setRequestHeader('Access-Control-Allow-Origin', '*')};
 
@@ -457,12 +457,10 @@ PV3DPanel.prototype.generateAttributes = function(threeDWidth, threeDHeight, pdb
 	};
 };
 
-
-
 function getPDBURL(pdbID, biounit) {
-	var url = "http://www.rcsb.org/pdb/files/" + pdbID + ".pdb";
+	var url = "https://files.rcsb.org/download/" + pdbID + ".pdb";
 	if (biounit > 0) {
-		url = "http://www.rcsb.org/pdb/files/" + pdbID + ".pdb" + biounit ;
+		url = "https://files.rcsb.org/download/" + pdbID + ".pdb" + biounit ;
 	}
 	return url;
 }

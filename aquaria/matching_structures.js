@@ -368,14 +368,14 @@ var getProteinSequenceSQL = function(primaryAccessions, sequence) {
           args = md5.md5(sequence);
         } else {
           sqlquery = "SELECT Primary_Accession, MD5_Hash as uniprot_hash, Sequence, Description, Length \
-            FROM protein_sequence WHERE Primary_Accession ";
+            FROM protein_sequence WHERE ";
           if (primaryAccessions.length > 1) {
             var questions = primaryAccessions.map(function () {return '?';});
-            sqlquery += 'in (' + questions.join(',') + ')';
-            args = primaryAccessions;
+            sqlquery += 'FIND_IN_SET(Primary_Accession,?)';
+            args = primaryAccessions.join(',');
           }
           else if (primaryAccessions.length === 1) {
-            sqlquery += '= ?';
+            sqlquery += 'Primary_Accession = ?';
             args = primaryAccessions[0];
           }
           else {
@@ -428,7 +428,7 @@ function generateClusters(loadRequest, sequence, clusterCallback) {
   console.time('generateClusters');
 
   var psshProcessor = new PSSHProcessor(sequence, function (clustersToSend) {
-//    console.log('calling cluster callback: ' + clusterCallback);
+    console.log('calling cluster callback: ' + clusterCallback);
     if (typeof clusterCallback !== 'undefined' && clusterCallback !== null) {
       clusterCallback(loadRequest, clustersToSend);
     }
