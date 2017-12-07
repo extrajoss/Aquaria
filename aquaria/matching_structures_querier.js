@@ -80,7 +80,7 @@ module.exports.getPSSHAndPDBRowsPromise = function(sequence, rowCallback) {
 
 var getPSSHSQL = function() {
   return "select psshResolved.PDB_chain_hash, Match_length, E_value, Identity_Score, Repeat_domains, Alignment from PSSH2 as psshResolved where protein_sequence_hash = ? \
-ORDER BY Identity_Score DESC, Match_length DESC";
+and e_value<0.0000000001 ORDER BY Identity_Score DESC, Match_length DESC";
 };
 
 var getTempSQL = function() {

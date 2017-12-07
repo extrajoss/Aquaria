@@ -466,6 +466,7 @@ function generateClusters(loadRequest, sequence, clusterCallback) {
 }
 
 
+
 //counts the number of residues in an alignment
 function residuecount(seq_start, seq_end) {
   var i;
@@ -511,6 +512,7 @@ var getPSSH2Data = function(loadRequest, sequence, clusterCallback) {
   });
 };
 
+module.exports.getUniprotSequence = getUniprotSequence;
 module.exports.get_matching_structures = get_matching_structures;
 module.exports.get_sequence = get_sequence;
 module.exports.getAccessionForPDB = getAccessionForPDB;

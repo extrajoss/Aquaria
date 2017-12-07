@@ -254,7 +254,15 @@ function generate_clusters(data, matches) {
 	            n_cluster += 1;
 	            matches.clusters[n_cluster] = {};
 	            matches.clusters[n_cluster].members = [];
-	            matches.clusters[n_cluster].members.push({"pdb_title": data[i].Title, "pdb_id": data[i].PDB_ID, "pdb_chain": [data[i].Chain], "Repeat_domains": [data[i].Repeat_domains], "alignment_identity_score": data[i].Identity_Score, "viewer_format": [pssh[pssh_id].pssh_full_alignment.generate_viewer_format(data[i].PDB_ID, data[i].Chain, matches.uniprot_primary_accession[0])], "Resolution": [pssh[pssh_id].Resolution] });
+	            matches.clusters[n_cluster].members.push({
+					"pdb_title": data[i].Title, 
+					"pdb_id": data[i].PDB_ID, 
+					"pdb_chain": [data[i].Chain], 
+					"Repeat_domains": [data[i].Repeat_domains], 
+					"alignment_identity_score": data[i].Identity_Score, 
+					"viewer_format": [pssh[pssh_id].pssh_full_alignment.generate_viewer_format(data[i].PDB_ID, data[i].Chain, matches.uniprot_primary_accession[0])], 
+					"Resolution": [pssh[pssh_id].Resolution] 
+				});
 	            matches.clusters[n_cluster].seq_start = pssh[pssh_id].seq_start;
 	            matches.clusters[n_cluster].seq_end = pssh[pssh_id].seq_end;
 	            matches.clusters[n_cluster].alignment_identity_score = [pssh[pssh_id].alignment_identity_score];
@@ -265,7 +273,15 @@ function generate_clusters(data, matches) {
 	               // determine if the pssh entry fits in a cluster already made
 	               if (isSameCluster(pssh[pssh_id].seq_start, pssh[pssh_id].seq_end, matches.clusters[k].seq_start, matches.clusters[k].seq_end) && categorised === 0) {
 	                  // add to cluster if it matches
-	                  matches.clusters[k].members.push({"pdb_title": data[i].Title, "pdb_id": data[i].PDB_ID, "pdb_chain": [data[i].Chain], "Repeat_domains": [data[i].Repeat_domains], "alignment_identity_score": data[i].Identity_Score, "viewer_format": [pssh[pssh_id].pssh_full_alignment.generate_viewer_format(data[i].PDB_ID, data[i].Chain, matches.uniprot_primary_accession[0])], "Resolution": [pssh[pssh_id].Resolution] });
+	                  matches.clusters[k].members.push({
+						  "pdb_title": data[i].Title, 
+						  "pdb_id": data[i].PDB_ID, 
+						  "pdb_chain": [data[i].Chain], 
+						  "Repeat_domains": [data[i].Repeat_domains], 
+						  "alignment_identity_score": data[i].Identity_Score, 
+						  "viewer_format": [pssh[pssh_id].pssh_full_alignment.generate_viewer_format(data[i].PDB_ID, data[i].Chain, matches.uniprot_primary_accession[0])], 
+						  "Resolution": [pssh[pssh_id].Resolution] 
+						});
 	                  categorised = 1;
 	               }
 	               k += 1;
@@ -275,7 +291,15 @@ function generate_clusters(data, matches) {
 	               n_cluster += 1;
 	               matches.clusters[n_cluster] = {};
 	               matches.clusters[n_cluster].members = [];
-	               matches.clusters[n_cluster].members.push({"pdb_title": data[i].Title, "pdb_id": data[i].PDB_ID, "pdb_chain": [data[i].Chain], "Repeat_domains": [data[i].Repeat_domains], "alignment_identity_score": data[i].Identity_Score, "viewer_format": [pssh[pssh_id].pssh_full_alignment.generate_viewer_format(data[i].PDB_ID, data[i].Chain, matches.uniprot_primary_accession[0])], "Resolution": [pssh[pssh_id].Resolution] });
+	               matches.clusters[n_cluster].members.push({
+					   "pdb_title": data[i].Title, 
+					   "pdb_id": data[i].PDB_ID, 
+					   "pdb_chain": [data[i].Chain], 
+					   "Repeat_domains": [data[i].Repeat_domains], 
+					   "alignment_identity_score": data[i].Identity_Score, 
+					   "viewer_format": [pssh[pssh_id].pssh_full_alignment.generate_viewer_format(data[i].PDB_ID, data[i].Chain, matches.uniprot_primary_accession[0])], 
+					   "Resolution": [pssh[pssh_id].Resolution] 
+					});
 	               matches.clusters[n_cluster].seq_start = pssh[pssh_id].seq_start;
 	               matches.clusters[n_cluster].seq_end = pssh[pssh_id].seq_end;
 	               matches.clusters[n_cluster].alignment_identity_score = [pssh[pssh_id].alignment_identity_score];
@@ -540,7 +564,16 @@ function generate_clusters_multiple_uniprot(data, matches) {
             // clustering
 				matches.clusters[n_cluster] = {};
 				matches.clusters[n_cluster].members = [];
-				matches.clusters[n_cluster].members.push({"pdb_title": matches.pdb[i].pdb_title, "pdb_id": matches.pdb[i].pdb_id, "pdb_chain": matches.pdb[i].members.slice(0), "uniprot": matches.pdb[i].members_uniprot.slice(0), "Repeat_domains": matches.pdb[i].members_Repeat_domains.slice(0), "pssh_alignment": matches.pdb[i].members_pssh_alignment.slice(0), "pdb_alignment": matches.pdb[i].members_pdb_alignment.slice(0), "viewer_format": matches.pdb[i].members_pssh_full_alignment.slice(0) });
+				matches.clusters[n_cluster].members.push({
+					"pdb_title": matches.pdb[i].pdb_title, 
+					"pdb_id": matches.pdb[i].pdb_id, 
+					"pdb_chain": matches.pdb[i].members.slice(0), 
+					"uniprot": matches.pdb[i].members_uniprot.slice(0), 
+					"Repeat_domains": matches.pdb[i].members_Repeat_domains.slice(0), 
+					"pssh_alignment": matches.pdb[i].members_pssh_alignment.slice(0), 
+					"pdb_alignment": matches.pdb[i].members_pdb_alignment.slice(0), 
+					"viewer_format": matches.pdb[i].members_pssh_full_alignment.slice(0) 
+				});
 				matches.clusters[n_cluster].seq_start = matches.pdb[i].seq_start;
 				matches.clusters[n_cluster].seq_end = matches.pdb[i].seq_end;
 				matches.clusters[n_cluster].alignment_identity_score = matches.pdb[i].alignment_identity_score.slice(0);
@@ -550,7 +583,16 @@ function generate_clusters_multiple_uniprot(data, matches) {
 				k = 0;
 				while (categorised === 0 && k <= n_cluster) {
 					if (isSameCluster(matches.pdb[i].seq_start, matches.pdb[i].seq_end, matches.clusters[k].seq_start, matches.clusters[k].seq_end) && categorised === 0) {
-						matches.clusters[n_cluster].members.push({"pdb_title": matches.pdb[i].pdb_title, "pdb_id": matches.pdb[i].pdb_id, "pdb_chain": matches.pdb[i].members.slice(0), "uniprot": matches.pdb[i].members_uniprot.slice(0), "Repeat_domains": matches.pdb[i].members_Repeat_domains.slice(0), "pssh_alignment": matches.pdb[i].members_pssh_alignment.slice(0), "pdb_alignment": matches.pdb[i].members_pdb_alignment.slice(0), "viewer_format": matches.pdb[i].members_pssh_full_alignment.slice(0) });
+						matches.clusters[n_cluster].members.push({
+							"pdb_title": matches.pdb[i].pdb_title, 
+							"pdb_id": matches.pdb[i].pdb_id, 
+							"pdb_chain": matches.pdb[i].members.slice(0), 
+							"uniprot": matches.pdb[i].members_uniprot.slice(0), 
+							"Repeat_domains": matches.pdb[i].members_Repeat_domains.slice(0), 
+							"pssh_alignment": matches.pdb[i].members_pssh_alignment.slice(0), 
+							"pdb_alignment": matches.pdb[i].members_pdb_alignment.slice(0), 
+							"viewer_format": matches.pdb[i].members_pssh_full_alignment.slice(0) 
+						});
 						categorised = 1;
 					}
 					k += 1;
@@ -559,7 +601,16 @@ function generate_clusters_multiple_uniprot(data, matches) {
                n_cluster += 1;
                matches.clusters[n_cluster] = {};
                matches.clusters[n_cluster].members = [];
-               matches.clusters[n_cluster].members.push({"pdb_title": matches.pdb[i].pdb_title, "pdb_id": matches.pdb[i].pdb_id, "pdb_chain": matches.pdb[i].members.slice(0), "uniprot": matches.pdb[i].members_uniprot.slice(0), "Repeat_domains": matches.pdb[i].members_Repeat_domains.slice(0), "pssh_alignment": matches.pdb[i].members_pssh_alignment.slice(0), "pdb_alignment": matches.pdb[i].members_pdb_alignment.slice(0), "viewer_format": matches.pdb[i].members_pssh_full_alignment.slice(0) });
+               matches.clusters[n_cluster].members.push({
+				   "pdb_title": matches.pdb[i].pdb_title, 
+				   "pdb_id": matches.pdb[i].pdb_id, 
+				   "pdb_chain": matches.pdb[i].members.slice(0), 
+				   "uniprot": matches.pdb[i].members_uniprot.slice(0), 
+				   "Repeat_domains": matches.pdb[i].members_Repeat_domains.slice(0), 
+				   "pssh_alignment": matches.pdb[i].members_pssh_alignment.slice(0), 
+				   "pdb_alignment": matches.pdb[i].members_pdb_alignment.slice(0), 
+				   "viewer_format": matches.pdb[i].members_pssh_full_alignment.slice(0) 
+				});
                matches.clusters[n_cluster].seq_start = matches.pdb[i].seq_start;
                matches.clusters[n_cluster].seq_end = matches.pdb[i].seq_end;
                matches.clusters[n_cluster].alignment_identity_score = matches.pdb[i].alignment_identity_score.slice(0);

@@ -8,9 +8,11 @@ var Conservation = function(uniprot_sequence) {
 	this.conservationArray[0] = [];
 	this.substitutions.conserved = [];
 	this.substitutions.nonconserved = [];
+	this.substitutions.identical = [];
 	this.secondary_structure[0] = [];
-	this.substitutions['conserved'][0] = [];
-	this.substitutions['nonconserved'][0] = [];
+	this.substitutions.identical[0] = [];
+	this.substitutions.conserved[0] = [];
+	this.substitutions.nonconserved[0] = [];
 	this.uniprot_sequence = uniprot_sequence;
 	// lets do it!
 	
@@ -77,8 +79,8 @@ Conservation.prototype.calculateConservation = function(pssh_full_alignment,
 			seqres.residue = SEQRES.charAt(seqres.i_residue - 1);
 			conservation = score(uniprot.residue, seqres.residue);
 			this.conservationArray[l][uniprot.i_residue] = conservation;
-			if (conservation && conservation !== 'identical') {
-
+			//if (conservation && conservation !== 'identical') {
+			if (conservation) {
 				this.substitutions[conservation][l].push(uniprot.i_residue);
 //				console.log('pushing conservation ' + conservation +": " + uniprot.i_residue + ", size: " + this.substitutions[conservation][l].length + ", this: " + this);
 			}

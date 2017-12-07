@@ -4,6 +4,21 @@ var config = require('./config');
 var Promise = require('es6-promise').Promise;
 var stream = require('stream');
 
+var connectionPool;
+
+var create_connection_pool = function(options){
+    return mysql.createPool({
+            acquireTimeout: 10000,
+            connectionLimit: 50,
+            host: config.get('dbhost'),
+            user: config.get('dbuser'),
+            password: config.get('dbpassword'),
+            database: config.get('database'),
+            debug: false,
+            multipleStatements:true
+        });
+}
+
 var MAX_QUERY_SIZE = 500;
 
 var skipStreaming = config.get('skipDBStreaming') || false;
@@ -17,7 +32,7 @@ var skipStreaming = config.get('skipDBStreaming') || false;
 // together, this sanitises the DB input.
 // See https://github.com/felixge/node-mysql/blob/master/Readme.md
 
-function connect(options) {
+function connectPromise(options) {
   options = options || {};
   options.host     = config.get('dbhost');
   options.user     = config.get('dbuser');
@@ -25,19 +40,22 @@ function connect(options) {
   options.password = config.get('dbpassword');
   options.database = config.get('database');
 //  console.log('options: ' + JSON.stringify(options));
-	var connection = mysql.createConnection(options);
-	return connection;
-}
-
-function connectPromise(options) {
-	return new Promise (function (resolve) {
-		resolve(connect(options));
+	if(!connectionPool){
+		connectionPool = create_connection_pool();
+	}
+	return new Promise(function(resolve,reject){connectionPool.getConnection(function (err, connection) {
+			if(err){
+				reject(err);
+			}else{
+				resolve(connection);
+			}
+		});
 	});
 }
 
 function disconnectPromise(connection) {
 	return new Promise (function (resolve, reject) {
-		connection.end(function(err) {
+		connection.release(function(err) {
 			if (typeof err === undefined || err === null) {
 				resolve();
 			}
@@ -52,6 +70,7 @@ function disconnectPromise(connection) {
 
 var actualQueryPromise = function (connection, sql, params) {
 	return new Promise (function (resolve, reject ) {
+		console.log({"Query":connection.format(sql,params)},params);
 		connection.query(sql, params, function (err, results) {
 			if (typeof err === undefined || err === null) {
 				resolve(results);
@@ -69,9 +88,9 @@ module.exports.queryPromise = function (sql, params, options) {
 	if (sqlmsg.length > 62) {
 		sqlmsg = sqlmsg.substring(0, 60) + "...";
 	}
-	sqlmsg = 'query: ' + sqlmsg;
+	d = new Date();
+	sqlmsg = Math.random() + 'query: ' + sqlmsg;
 	console.time(sqlmsg);
-//	logger.info('sql: ' + sql + ': ' + params);
 	return connectPromise(options).then (function (connectionInner) {
 		connection = connectionInner;
 		return actualQueryPromise(connection, sql, params);
@@ -167,8 +186,9 @@ module.exports.query = function (sql, params, callback, meta_data) {
 	var result;
 	// if (params !== null) {result = cache.read(params)};
 	if (! result) {
-		var connection = connect();
-		connection.connect(function(err) {
+		connectPromise()
+		.then(
+			function(err) {
 			if (err !== null) {
 				logger.error("Err is occurred on connection:" + err);
 			} else {
@@ -241,7 +261,7 @@ var queryBatchList = function(itemList, sqlFunction, batchCallback) {
 
 
 function disconnect(connection) {
-	connection.end(function(err) {
+	connection.release(function(err) {
 	});	
 }
 

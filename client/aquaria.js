@@ -678,7 +678,6 @@ var MAX_PROTEIN_HISTORY = 5;
 							}
 
 							AQUARIA.showMatchingStructures.updateSizes(AQUARIA.structures2match.clusters);
-
 							AQUARIA.structures2match.Selected_PDB = Selected_PDB;
 							console.log('applet version: ' + version_string);
 							AQUARIA.structures2match.version_string = version_string;
@@ -1255,7 +1254,7 @@ var MAX_PROTEIN_HISTORY = 5;
       AQUARIA.loadAccession(uniprot_accession, window.initialParams.pdb_id, window.initialParams.pdb_chain);
     }
     else if (pathname
-        .match(/\/(?:leap\/)?([A-Z][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])\/?$/)) {
+        .match(/\/(?:leap\/)?(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))\/?$/)) {
       uniprot_accession = [];
       uniprot_accession.push(RegExp.$1);
       AQUARIA.initialisePanels(true);
@@ -1267,7 +1266,7 @@ var MAX_PROTEIN_HISTORY = 5;
       AQUARIA.loadAccession(uniprot_accession);
       // primary accession and pdb
     } else if (pathname
-        .match(/\/(?:leap\/)?([A-Z][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])\/([0-9]([a-z,0-9][a-z,0-9])[a-z,0-9])\/?$/)) {
+        .match(/\/(?:leap\/)?(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))\/([0-9]([a-z,0-9][a-z,0-9])[a-z,0-9])\/?$/)) {
       uniprot_accession = [];
       uniprot_accession.push(RegExp.$1);
       var pdb = RegExp.$2;
@@ -1275,7 +1274,7 @@ var MAX_PROTEIN_HISTORY = 5;
       AQUARIA.loadAccession(uniprot_accession, pdb);
       // primary accession and pdb and chain
     } else if (pathname
-        .match(/\/(?:leap\/)?([A-Z][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])\/([0-9]([a-z,0-9][a-z,0-9])[a-z,0-9])\/([a-zA-Z,0-9])?$/)) {
+        .match(/\/(?:leap\/)?(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))\/([0-9]([a-z,0-9][a-z,0-9])[a-z,0-9])\/([a-zA-Z,0-9])?$/)) {
       uniprot_accession = [];
       uniprot_accession.push(RegExp.$1);
       var pdb = RegExp.$2;

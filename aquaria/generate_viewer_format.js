@@ -26,7 +26,7 @@ module.exports.get_3D_alignment = function(member, sequence, callback) {
 		} else {
 //			logger.info("Object NOT read from cache, create it ! " + cache_id);
 			output = initialiseOutput(member, sequence);
-			generateChainsAndSequenceQuery(member).then(
+			generateChainsAndSequenceQuery(member,sequence.primary_accession).then(
 					function (data) {
 						generateViewerSingleUniprot(data, output, member.viewer_format[0]).then (function (output) {
 //						  console.log("OUTPUT: " + JSON.stringify(output));
@@ -63,9 +63,9 @@ var initialiseOutput = function (member, sequence) {
 
 // populate the output object and also make a query to find the proteins of
 // other chains
-function generateChainsAndSequenceQuery(member) {
-	var sqlquery = "SELECT PDB_chain.PDB_ID, Biounits, PDB_chain.Matches, PDB_chain.MD5_Hash As PDB_chain_hash, 2D_Structure as Structure2D, Transform, protein_sequence.MD5_Hash As uniprot_hash, PDB_chain.Chain, SEQRES, Align_to_SEQRES, protein_sequence.Primary_Accession, protein_sequence.Sequence from PDB_chain LEFT JOIN protein_sequence on (protein_sequence.Primary_Accession = PDB_chain.Accession) LEFT JOIN PDB on (PDB.PDB_ID = PDB_chain.PDB_ID) WHERE PDB_chain.PDB_ID = ? and PDB.PDB_ID = PDB_chain.PDB_ID";
-	return connector.queryPromise(sqlquery, member.pdb_id);
+function generateChainsAndSequenceQuery(member,primary_accession) {
+	var sqlquery = "SELECT PDB_chain.PDB_ID, Biounits, PDB_chain.Matches, PDB_chain.MD5_Hash As PDB_chain_hash, 2D_Structure as Structure2D, Transform, protein_sequence.MD5_Hash As uniprot_hash, PDB_chain.Chain, SEQRES, Align_to_SEQRES, protein_sequence.Primary_Accession, protein_sequence.Sequence from PDB_chain LEFT JOIN protein_sequence on (protein_sequence.Primary_Accession = ?) LEFT JOIN PDB on (PDB.PDB_ID = PDB_chain.PDB_ID) WHERE PDB_chain.PDB_ID = ? and PDB.PDB_ID = PDB_chain.PDB_ID";
+	return connector.queryPromise(sqlquery, [primary_accession, member.pdb_id]);
 }
 
 function processConservation (row, fullAlignment,  sequence) {
@@ -205,7 +205,7 @@ var processChainRow = function(output, row, conservations, pdbChainSelected, sel
 			    
   				var conservation = processConservation(row, fullAlignment, sequence.sequence);
   //				console.log('conservation CHECK for Chain ' + row.Chain + ': ' + JSON.stringify(conservation));
-  				conservations[row.Chain] = {conserved: conservation.substitutions.conserved[0], nonconserved: conservation.substitutions.nonconserved[0]};
+  				conservations[row.Chain] = {identical: conservation.substitutions.identical[0],conserved: conservation.substitutions.conserved[0], nonconserved: conservation.substitutions.nonconserved[0]};
   //				console.log('conservation for Chain ' + row.Chain + ': ' + JSON.stringify(conservations[row.Chain]));
 //  				console.log('The transform is : ' + row.Transform);
   					if (isNewChain) {
