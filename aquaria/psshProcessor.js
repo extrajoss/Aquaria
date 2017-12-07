@@ -10,6 +10,7 @@ var PSSHProcessor = function(sequence, clusterCallback) {
   this.sequence = sequence;
   this.sendClusterCallback = clusterCallback;
   this.clusters = [];
+  this.regions = [];
   this.clustersToSend = [];
   this.psshStore = {};
 
@@ -116,9 +117,6 @@ PSSHProcessor.prototype.processPSSHRow = function (psshRow, chainRow) {
           // initialise the cluster based on the first member
           cluster.initialise(member);
           that.clusters.push(cluster);
-
-
-
         }
       }
 
@@ -129,6 +127,49 @@ PSSHProcessor.prototype.processPSSHRow = function (psshRow, chainRow) {
   }
 }
 
+PSSHProcessor.prototype.processPSSHRow_for_dark_proteome = function (psshRow, chainRow) {
+  var that = this;
+//console.log('starting dataRow: ' + JSON.stringify([psshRow, chainRow]));
+  try {
+
+    processPSSHMember(psshRow, chainRow, that.sequence.primary_accession, function(
+        member, psshEntry) {
+//      console.log('starting psshEntry: ' + JSON.stringify(psshEntry));
+
+      if (member.duplicateOf || psshEntry === null) {
+//        console.log('foudn dup member : ' + JSON.stringify(member.duplicateOf));
+        var source = that.psshStore[member.duplicateOf];
+        if (typeof source === 'undefined') {
+          source = {};
+          that.psshStore[member.duplicateOf] = source;
+        }
+        source.duplicates = source.duplicates || [];
+        source.duplicates.push(member.chain);
+      }
+      else {
+        // handle the case that the dup was found before the real thing
+        var sourceDummy = that.psshStore[member.pssh_id];
+        that.psshStore[member.pssh_id] = member;
+        if (typeof sourceDummy !== 'undefined') {
+          member.duplicates = sourceDummy.duplicates;
+        }
+//      console.log('foudn member : ' + JSON.stringify(member));
+        var n_regions = psshEntry.seq_start.length;
+        for(var region_index=0;region_index<n_regions;region_index++) {
+            var region = [
+                psshEntry.seq_start[region_index],
+                psshEntry.seq_end[region_index]
+                ];
+            that.regions.push(region);
+        }        
+      }
+
+    });
+  }
+  catch(err) {
+    console.log('Error in PSSH2 datarow: ' + err);
+  }
+}
 
 //determines whether two alignments belong in the same cluster based on number
 //of residues that overlap
@@ -313,9 +354,8 @@ var createMemberFromEntry = function(psshRow, pdbChainRow, psshEntry, primaryAcc
     "E_value" : psshRow.E_value,
     "match_length" : psshRow.Match_length,
     "alignment_identity_score" : psshRow.Identity_Score,
-    "viewer_format" : [ psshEntry.pssh_full_alignment.generate_viewer_format(
-        pdbChainRow.PDB_ID, pdbChainRow.Chain, primaryAccession) ],
-        "Resolution" : [ psshEntry.Resolution ]
+    "viewer_format" : [ psshEntry.pssh_full_alignment.generate_viewer_format(pdbChainRow.PDB_ID, pdbChainRow.Chain, primaryAccession) ],
+    "Resolution" : [ psshEntry.Resolution ]
   };
 
 }

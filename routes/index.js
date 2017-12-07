@@ -16,6 +16,7 @@ var versionString = require('../aquaria/versionString');
 var Promise = require('es6-promise').Promise;
 var autocomplete = require('../aquaria/autocomplete');
 var viewerFormat = require('../aquaria/generate_viewer_format');
+var dark_proteome_calculations = require('../aquaria/dark_proteome_calculations.js');
 
 var formats = { 
     'json' : {
@@ -32,7 +33,10 @@ var formats = {
     'tsv' : {
       mime : "text/tab-separated-values",
       separator : '\t'
-    },
+    },/*
+    'fasta' : {
+      mime : "text/plain",
+    }*/
 };
 
 // expire after 1 week
@@ -41,7 +45,7 @@ var JAR_PATH = './jar/';
 
 exports.home_page = function(request, response, next){
 	'use strict';
-    if (typeof request.params.id == 'undefined' || request.params.id.match(/(?:\/leap)?([A-Z][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])$/) ) {
+    if (typeof request.params.id == 'undefined' || request.params.id.match(/(?:\/leap)?(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))$/) ) {
     	console.log('INSIDE : reqID:' + request.params.id);
     	var args = { title: 'Success',
     	    googleAnalyticsID: config.get('googleAnalyticsID'),    
@@ -120,12 +124,55 @@ var writeResponseString = function(response, body, type) {
   response.end(body);
 }
 
+var writeResponseString2 = function(response, body, type) {
+  response.writeHead(200, {
+    'Content-Length': body.length,
+    'Content-Type': 'text/plain' });
+  response.end(body);
+}
+
 var writeErrorResponse = function(response, body) {
   response.writeHead(500, {
     'Content-Length': body.length,
     'Content-Type': 'text/plain' });
   response.end(body);
 }
+exports.save_all_dark_regions = function(request, response, next){
+  return dark_proteome_calculations.save_remaining_dark_regions()
+    .then(function(data){
+      next();
+    });
+}
+
+
+var getDark_regionsData = function(request, response, next){
+return new Promise (function (resolve, reject) {
+    var id = RegExp.$1;
+
+    logger.info('the id for Dark Regions JSON is: ' + id);
+    try {
+      var loadRequest = {
+          selector: [id]
+      };        
+      var sequences = null;
+      //(loadRequest, sequenceCallback, initialClusterCallback, finalCallback) {
+      var uniprot_primary_accession = loadRequest.selector[0];
+      dark_proteome_calculations.get_dark_regions_from_accession(uniprot_primary_accession, function (accession, regions) {
+        var data = {
+          sequences: null,
+          Selected_PDB: null,
+          regions: regions
+        };
+//        console.log('about to resolve:1');
+        resolve(data);
+      });
+    }
+    catch (err) {
+      console.log("ERR caught writing JSON for: " + id + ", err: " + err);
+      response.end("{}");
+    }    
+  });
+};
 
 var getMatchingStructuresData = function(request, response, next) {
   return new Promise (function (resolve, reject) {
@@ -162,8 +209,8 @@ var getMatchingStructuresData = function(request, response, next) {
   });
 };
 exports.matchingStructuresExt = function(request, response, next){
-  if (typeof request.params.id == 'undefined' || request.params.id.match(/(?:\/leap)?([A-Z][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])$/) ) {
-    // id is valid
+  if (typeof request.params.id == 'undefined' || request.params.id.match(/(?:\/leap)?(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))$/) ) {
+    var result = request.params.id.match(/(?:\/leap)?(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))$/);
   }
   else {
     return next();
@@ -183,16 +230,93 @@ exports.matchingStructuresExt = function(request, response, next){
   }
 };
 
-var matchingStructuresWithSeperator = function(request, response, next, separator, mimetype){
+exports.dark_regionsExt = function(request, response, next){
+  if (typeof request.params.id == 'undefined' || request.params.id.match(/(?:\/leap)?(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))$/) ) {
+    // id is valid
+  }
+  else {
+    return next();
+  }
+
+  if (typeof request.params.format === 'undefined' || request.params.format.trim() === '' || request.params.format.trim() === 'undefined' || request.params.format.trim() === 'html') {
+//    exports.home_page(request, response, next);
+    console.log('going to next it');
+    return next();
+  }
+  var format = formats[request.params.format];
+  if (format) {
+    return dark_regionsWithSeparator(request, response, next, format.separator, format.mime);
+  }
+  else {
+    return writeErrorResponse(response, 'unknown extension: ' + request.params.format);
+  }
+};
+
+var dark_regionsWithSeparator = function(request, response, next, separator, mimetype){
   'use strict';
   logger.info('the id for matching structures JSON req param id : ' + request.params.id + ', clusterId: ' + request.params.clusterId + ', pdbid: ' + request.params.pdbid + ', format: ' + request.params.format);
 
-    if (typeof request.params.id !== 'undefined' && request.params.id.match(/([A-Z][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])$/) ) {
+    if (typeof request.params.id !== 'undefined' && request.params.id.match(/(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))$/) ) {
+      getDark_regionsData(request, response).then (function (data) {
+        try {
+            
+          var regions = data.regions;
+          // show all members
+            if (request.params.format === 'json') {
+              //added by joss
+              var json = JSON.stringify(regions, null, "\t");
+              //var json = JSON.stringify(clusters, null, "\t");
+              writeResponseString2(response, json, mimetype);
+            }
+            else {
+              // show all regions
+              var output = clusters.map(function (cluster, i) {
+                var cluster_alignment = {seq_start:cluster.seq_start,seq_end:cluster.seq_end};
+                return [i,cluster.cluster_size, cluster.pdb_id, cluster.pdb_chain, cluster.alignment_identity_score,JSON.stringify(cluster_alignment)].join(separator);
+              });
+              var header = ['cluster index','cluster size', 'top pdb', 'top pdb chain', 'alignment score','cluster_alignment'].join(separator) + "\n";
+      
+              writeResponseString(response, header + output.join('\n'), mimetype);
+            }
+          }
+        catch (e) {
+          console.log('e: ' + e);
+          throw e;
+        }
+      });
+    }
+    else {
+      next();
+    }
+}
+
+var get_fasta_alignment= function(alignment){
+
+        var result = "Looking up fasta for " + alignment.id + " to " + alignment.pdbid + ":" + alignment.chainid;
+}
+
+var matchingStructuresWithSeperator = function(request, response, next, separator, mimetype){
+  'use strict';
+  logger.info('the id for matching structures JSON req param id : ' + request.params.id + ', clusterId: ' + request.params.clusterId + ', pdbid: ' + request.params.pdbid + ', format: ' + request.params.format);
+    if(request.params.id&&request.params.pdbid&&request.params.chainid&&request.params.format==="fasta"){
+        /*get_protein_sequence
+        get_pdb_chain
+        get_pssh2*/
+        alignment = {
+          "id":request.params.id,
+          "pdbid":request.params.pdbid,
+          "chainid":request.params.chainid,
+          "protein_sequence":"MSGARSTTAGAVPSAATTSTTSTTSNSKDSDSNESLYPLALLMDELKHDDIANRVEAMKKLDTIALALGPERTRNELIPFLTEVAQDDEDEVFAVLAEQLGKFVPYIGGPQYATILLPVLEILASAEETLVREKAVDSLNNVAQELSQEQLFSDFVPLIEHLATADWFSSKVSACGLFKSVIVRIKDDSLRKNILALYLQLAQDDTPMVKRAVGKNLPILIDLLTQNLGLSTDEDWDYISNIFQKIINDNQDSVKFLAVDCLISILKFFNAKGDESHTQDLLNSAVKLIGDEAWRVRYMAADRFSDLASQFSSNQAYIDELVQPFLNLCEDNEGDVREAVAKQVSGFAKFLNDPSIILNKILPAVQNLSMDESETVRSALASKITNIVLLLNKDQVINNFLPILLNMLRDEFPDVRLNIIASLKVVNDVIGIELLSDSLLPAITELAKDVNWRVRMAIIEYIPILAEQLGMQFFDQQLSDLCLSWLWDTVYSIREAAVNNLKRLTEIFGSDWCRDEIISRLLKFDLQLLENFVSRFTILSALTTLVPVVSLDVVTEQLLPFISHLADDGVPNIRFNVAKSYAVIVKVLIKDEAKYDALIKNTILPSLQTLCQDEDVDVKYFAKKSLAECQELLKN",
+          "pdb_chain":"AAADGDDSLYPIAVLIDELRNEDVQLRLNSIKKLSTIALALGVERTRSELLPFLTDTIYDEDEVLLALAEQLGTFTTLVGGPEYVHCLLPPLESLATVEETVVRDKAVESLRAISHEHSPSDLEAHFVPLVKRLAGGDWFTSRTSACGLFSVCYPRVSSAVKAELRQYFRNLCSDDTPMVRRAAASKLGEFAKVLELDNVKSEIIPMFSNLASDEQDSVRLLAVEACVNIAQLLPQEDLEALVMPTLRQAAEDKSWRVRYMVADKFTELQKAVGPEITKTDLVPAFQNLMKDCEAEVRAAASHKVKEFCENLSADCRENVIMSQILPCIKELVSDANQHVKSALASVIMGLSPILGKDNTIEHLLPLFLAQLKDECPEVRLNIISNLDCVNEVIGIRQLSQSLLPAIVELAEDAKWRVRLAIIEYMPLLAGQLGVEFFDEKLNSLCMAWLVDHVYAIREAATSNLKKLVEKFGKEWAHATIIPKVLAMSGDPNYLHRMTTLFCINVLSEVCGQDITTKHMLPTVLRMAGDPVANVRFNVAKSLQKIGPILDNSTLQSEVKPILEKLTQDQDVDVKYFAQEALTVLSLA",
+          "alignment":"31-88:4-61 90-167:62-139 169-173:140-144 174-185:146-157 187-227:158-198 234-273:199-238 277-314:239-276 316-354:277-315 355-525:319-489 528-590:490-552 597-631:553-587"
+        };
+        var result = get_fasta_alignment(alignment);
+              writeResponseString2(response, result, mimetype);
+    }else if (typeof request.params.id !== 'undefined' && request.params.id.match(/(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))$/) ) {
       getMatchingStructuresData(request, response).then (function (data) {
         try {
             
           var clusters = data.clusters;
-          
           // show all members
           if (request.params.pdbid) {
             logger.info('show PDB ' + request.params.pdbid);
@@ -236,9 +360,10 @@ var matchingStructuresWithSeperator = function(request, response, next, separato
             else {
               // show all clusters
               var output = clusters.map(function (cluster, i) {
-                return [i,cluster.cluster_size, cluster.pdb_id, cluster.pdb_chain, cluster.alignment_identity_score].join(separator);
+                var cluster_alignment = {seq_start:cluster.seq_start,seq_end:cluster.seq_end};
+                return [i,cluster.cluster_size, cluster.pdb_id, cluster.pdb_chain, cluster.alignment_identity_score,JSON.stringify(cluster_alignment)].join(separator);
               });
-              var header = ['cluster index','cluster size', 'top pdb', 'top pdb chain', 'alignment score'].join(separator) + "\n";
+              var header = ['cluster index','cluster size', 'top pdb', 'top pdb chain', 'alignment score','cluster_alignment'].join(separator) + "\n";
       
               writeResponseString(response, header + output.join('\n'), mimetype);
             }
@@ -258,7 +383,7 @@ var matchingStructuresWithSeperator = function(request, response, next, separato
 exports.matchingStructuresJSON = function(request, response, next){
 	'use strict';
 	logger.info('the id for matching structures JSON req param id : ' + request.params.id);
-    if (typeof request.params.id !== 'undefined' && request.params.id.match(/([A-Z][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])$/) ) {
+    if (typeof request.params.id !== 'undefined' && request.params.id.match(/(([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9])|([O,P,Q][0-9][A-Z,0-9][A-Z,0-9][A-Z,0-9][0-9])|([A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z,0-9][0-9]))$/) ) {
       getMatchingStructuresData(request, response).then (function (data) {
         var jsonString = JSON.stringify(data, null, "\t");
         writeResponseString(response, jsonString, 'application/json');

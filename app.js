@@ -12,6 +12,8 @@ var snapshot = require('./aquaria/snapshot');
 var config = require('./common/config');
 var shoe = require('shoe');
 var dnode = require('dnode');
+
+
 //var expiry = require('static-expiry');
 
 
@@ -112,6 +114,8 @@ app.get('/googlehostedservice.html', routes.googleHostedService);
 //app.post('/jnlp/app/:filename.jnlp', routes.jnlpApp);
 app.get('/jnlp/:versionString/:filename.jnlp', routes.jnlp);
 
+app.get('/save_all_dark_regions', routes.save_all_dark_regions);
+app.get('/dark_regions/:id.:format', routes.dark_regionsExt);
 app.get('/:id/cluster:clusterId.:format', routes.matchingStructuresExt);
 //app.get('/:id/cluster:clusterId.json', routes.matchingStructuresJSON);
 //app.get('/:id/cluster:clusterId.txt', routes.matchingStructuresTXT);
